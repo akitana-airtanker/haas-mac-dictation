@@ -27,6 +27,8 @@ KEYWORDS_FILE = os.environ.get("HAAS_KEYWORDS", os.path.join(HERE, "keywords.txt
 FFMPEG = "/opt/homebrew/bin/ffmpeg" if os.path.exists("/opt/homebrew/bin/ffmpeg") else "ffmpeg"
 PASS = {"file", "language", "response_format"}
 CHUNK_SECONDS = float(os.environ.get("HAAS_CHUNK_SECONDS", "90"))
+# 認識結果は機密を含み得るため、既定ではログに残さない。HAAS_LOG_TEXT=1 のときだけ記録する。
+LOG_TEXT = os.environ.get("HAAS_LOG_TEXT") == "1"
 
 
 def ensure_wav(data, filename):
@@ -66,13 +68,34 @@ def wav_seconds(data):
     return None
 
 
+def parse_keywords(text):
+    lines = (l.strip() for l in text.splitlines())
+    return [l for l in lines if l and not l.startswith("#")]
+
+
 def keywords():
     try:
         with open(KEYWORDS_FILE, encoding="utf-8") as f:
-            lines = (l.strip() for l in f)
-            return [l for l in lines if l and not l.startswith("#")]
+            return parse_keywords(f.read())
     except FileNotFoundError:
         return []
+
+
+def extract_transcript(body):
+    text = ""
+    try:
+        req = json.loads(body.decode("utf-8"))
+        for m in reversed(req.get("messages", [])):
+            if m.get("role") == "user":
+                c = m.get("content", "")
+                text = c if isinstance(c, str) else "".join(p.get("text", "") for p in c if isinstance(p, dict))
+                break
+    except Exception:
+        pass
+    s, e = text.rfind("<transcript>"), text.rfind("</transcript>")
+    if s != -1 and e > s:
+        text = text[s + len("<transcript>"):e]
+    return text.strip()
 
 
 def parse(ctype, body):
@@ -82,7 +105,9 @@ def parse(ctype, body):
         yield part.get_param("name", header="content-disposition"), part
 
 
-def rebuild(ctype, body):
+def rebuild(ctype, body, kws=None, to_wav=None):
+    kws = keywords() if kws is None else kws
+    to_wav = to_wav or ensure_wav
     boundary = "haas-" + uuid.uuid4().hex
     out = bytearray()
 
@@ -103,14 +128,14 @@ def rebuild(ctype, body):
             dropped.append("language")  # Haas は ja だけ
             continue
         if name == "file":
-            data, fname, ptype, transcoded = ensure_wav(data, part.get_filename())
+            data, fname, ptype, transcoded = to_wav(data, part.get_filename())
             if transcoded:
                 dropped.append("(ffmpeg->wav)")
             seconds = wav_seconds(data)
             add(name, data, fname, ptype)
             continue
         add(name, data, part.get_filename(), part.get_content_type() if part.get_filename() else None)
-    for kw in keywords():
+    for kw in kws:
         add("keywords[]", kw.encode())
     if seconds and seconds > CHUNK_SECONDS:
         add("chunking_strategy", b"auto")
@@ -148,24 +173,11 @@ class Handler(BaseHTTPRequestHandler):
         if self.path.rstrip("/").endswith("/audio/transcriptions") and ctype.startswith("multipart/"):
             ctype, body, dropped = rebuild(ctype, body)
             status, data = self._forward("POST", "/v1/audio/transcriptions", body, ctype)
-            sys.stderr.write(f"  dropped={dropped} -> {status} {data[:200].decode(errors='replace')}\n")
+            detail = data[:200].decode(errors="replace") if LOG_TEXT else f"({len(data)} bytes)"
+            sys.stderr.write(f"  dropped={dropped} -> {status} {detail}\n")
         elif self.path.rstrip("/").endswith("/chat/completions"):
-            # OpenWhispr の AI クリーンアップが誤って向いてきた場合は最後の user 入力をそのまま返す
-            text = ""
-            try:
-                req = json.loads(body.decode("utf-8"))
-                for m in reversed(req.get("messages", [])):
-                    if m.get("role") == "user":
-                        c = m.get("content", "")
-                        text = c if isinstance(c, str) else "".join(p.get("text", "") for p in c if isinstance(p, dict))
-                        break
-            except Exception:
-                pass
-            # OpenWhispr は <transcript>…</transcript> で包み、指示文を前後に付けて送ってくる。中身だけを返す
-            s, e = text.rfind("<transcript>"), text.rfind("</transcript>")
-            if s != -1 and e > s:
-                text = text[s + len("<transcript>"):e]
-            text = text.strip()
+            # OpenWhispr のテキスト補正がこのサーバーに向いた場合は、<transcript> の中身をそのまま返す
+            text = extract_transcript(body)
             resp = json.dumps({
                 "id": "chatcmpl-passthrough",
                 "object": "chat.completion",

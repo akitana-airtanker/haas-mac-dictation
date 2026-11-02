@@ -6,7 +6,7 @@ Apple Silicon Mac 上で日本語音声認識モデル [Haas-ja-v1.0](https://hu
 > 実験的な構成です。動作を確認したのは作者の環境1台（macOS 26、Apple M2、`speech.cpp` 0.10.0、OpenWhispr 1.11.0）だけで、`setup.sh` を新しい環境で実行して試してはいません。
 >
 > - 下の図の「応答0.2〜0.7秒」は `speech serve` の処理時間を単発で測った値で、話し終えてから文字が入力されるまでの時間ではありません。図中のホットキーは一例です。
-> - `proxy.py` は既定で認識結果を含む応答の先頭（200バイト）を `~/.local/share/haas-dictation/proxy.log` に記録します。
+> - `proxy.py` は既定では認識結果をログに残しません。`HAAS_LOG_TEXT=1` を指定したときだけ、応答の先頭（200バイト）を `~/.local/share/haas-dictation/proxy.log` に記録します。
 > - OpenWhispr の通信をすべて確認したわけではありません。外部に送信しないことは保証できません。
 
 ![ローカル日本語音声入力の3段構成](images/architecture.png)
@@ -41,6 +41,14 @@ cd haas-mac-dictation
 ## カスタム語彙の追加
 
 `~/.local/share/haas-dictation/keywords.txt` に `表記=読み1,読み2` を1行ずつ追記して保存すると、再起動なしで次の発話から反映されます。
+
+## テスト
+
+```sh
+python3 -m unittest discover -s tests
+```
+
+入力を乱数（シード固定）で生成し、未対応フィールドの除去、語彙の付与、90秒を超える音声だけへの分割指定、`<transcript>` の抽出を確かめます。
 
 ## 停止・アンインストール
 
