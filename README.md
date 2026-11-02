@@ -21,6 +21,8 @@ Apple Silicon Mac 上で日本語音声認識モデル [Haas-ja-v1.0](https://hu
 
 ## セットアップ
 
+前提：Apple Silicon の Mac、[Homebrew](https://brew.sh/)、Xcode Command Line Tools（`git` と `/usr/bin/python3` に必要。入っていなければ `xcode-select --install`）。
+
 ```sh
 brew install ffmpeg
 brew install --cask openwhispr
@@ -32,7 +34,7 @@ cd haas-mac-dictation
 
 `setup.sh` は次のことを行います。
 
-- `~/.local/bin/speech` がなければ、[speech.cpp の公式インストールスクリプト](https://github.com/nyosegawa/speech.cpp/blob/v0.10.0/install.sh)で検証した版の 0.10.0 を入れる（`SPEECH_VERSION=0.10.1 ./setup.sh` のように版を変えられる）。既にあれば入れ直さない
+- `~/.local/bin/speech` がなければ、[speech.cpp の公式インストールスクリプト](https://github.com/nyosegawa/speech.cpp/blob/v0.10.0/install.sh)で検証した版の 0.10.0 を入れる（`SPEECH_VERSION=0.10.1 ./setup.sh` のように版を変えられる）。既にあれば入れ直さない。インストールスクリプトは `~/.local/bin` を PATH に加える行を `~/.zshrc` などに書き足す
 - `haas-ja-v1.0` と `silero-vad` のモデルを取得する
 - `proxy.py` を `~/.local/share/haas-dictation/` に上書きでコピーする。`keywords.txt` はなければコピーする
 - `~/Library/LaunchAgents/` に2つの plist を書き、`local.haas.speech-serve` と `local.haas.proxy` を登録し直す
