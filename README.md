@@ -30,6 +30,13 @@ cd haas-mac-dictation
 ./setup.sh
 ```
 
+`setup.sh` は次のことを行います。
+
+- `~/.local/bin/speech` がなければ、[speech.cpp の公式インストールスクリプト](https://github.com/nyosegawa/speech.cpp/blob/v0.10.0/install.sh)で検証した版の 0.10.0 を入れる（`SPEECH_VERSION=0.10.1 ./setup.sh` のように版を変えられる）。既にあれば入れ直さない
+- `haas-ja-v1.0` と `silero-vad` のモデルを取得する
+- `proxy.py` を `~/.local/share/haas-dictation/` に上書きでコピーする。`keywords.txt` はなければコピーする
+- `~/Library/LaunchAgents/` に2つの plist を書き、`local.haas.speech-serve` と `local.haas.proxy` を登録し直す
+
 ### OpenWhispr 側の設定
 
 1. Finder または Dock から **OpenWhispr** を起動します（ターミナルの子プロセスとして起動すると macOS TCC によりマイク入力が遮断されます）。

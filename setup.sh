@@ -6,9 +6,11 @@ INSTALL_DIR="$HOME/.local/share/haas-dictation"
 LAUNCH_AGENTS="$HOME/Library/LaunchAgents"
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 
+# 検証した版。speech が既にあるときは入れ直さない（install.sh は他の版を削除するため）
+SPEECH_VERSION="${SPEECH_VERSION:-0.10.0}"
 if [ ! -x "$SPEECH_BIN" ]; then
-  echo "Installing speech.cpp..."
-  curl -fsSL https://raw.githubusercontent.com/nyosegawa/speech.cpp/main/install.sh | sh
+  echo "Installing speech.cpp $SPEECH_VERSION..."
+  curl -fsSL "https://raw.githubusercontent.com/nyosegawa/speech.cpp/v$SPEECH_VERSION/install.sh" | sh -s -- --version "$SPEECH_VERSION"
 fi
 
 "$SPEECH_BIN" pull haas-ja-v1.0
