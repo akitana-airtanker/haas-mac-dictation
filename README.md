@@ -2,6 +2,13 @@
 
 Apple Silicon Mac 上で日本語音声認識モデル [Haas-ja-v1.0](https://huggingface.co/third-intelligence/Haas-ja-v1.0)（`speech.cpp` Metal 推論）とディクテーションクライアント [OpenWhispr](https://github.com/OpenWhispr/openwhispr)（または VoiceInk）をつなぐ軽量中継スクリプトと launchd 設定です。
 
+> [!WARNING]
+> 実験的な構成です。動作を確認したのは作者の環境1台（macOS 26、Apple M2、`speech.cpp` 0.10.0、OpenWhispr 1.11.0）だけで、`setup.sh` を新しい環境で実行して試してはいません。
+>
+> - 下の図の「応答0.2〜0.7秒」は `speech serve` の処理時間を単発で測った値で、話し終えてから文字が入力されるまでの時間ではありません。図中のホットキーは一例です。
+> - `proxy.py` は既定で認識結果を含む応答の先頭（200バイト）を `~/.local/share/haas-dictation/proxy.log` に記録します。
+> - OpenWhispr の通信をすべて確認したわけではありません。外部に送信しないことは保証できません。
+
 ![ローカル日本語音声入力の3段構成](images/architecture.png)
 
 ## 役割 (`proxy.py`)
