@@ -2,6 +2,8 @@
 
 Apple Silicon Mac 上で日本語音声認識モデル [Haas-ja-v1.0](https://huggingface.co/third-intelligence/Haas-ja-v1.0)（`speech.cpp` Metal 推論）とディクテーションクライアント [OpenWhispr](https://github.com/OpenWhispr/openwhispr)（または VoiceInk）をつなぐ軽量中継スクリプトと launchd 設定です。
 
+解説記事：[Haas-ja-v1.0 で Mac ローカル音声入力を作る（Zenn）](https://zenn.dev/airtanker/articles/haas-ja-mac-dictation)
+
 > [!WARNING]
 > 実験的な構成です。動作を確認したのは作者の環境1台（macOS 26、Apple M2、`speech.cpp` 0.10.0、OpenWhispr 1.11.0）です。`setup.sh` は空のホームディレクトリで導入と認識まで確認しましたが、launchd への実際の登録とログイン時の自動起動は新しいユーザーでは試していません。
 >
