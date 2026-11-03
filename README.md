@@ -3,7 +3,7 @@
 Apple Silicon Mac 上で日本語音声認識モデル [Haas-ja-v1.0](https://huggingface.co/third-intelligence/Haas-ja-v1.0)（`speech.cpp` Metal 推論）とディクテーションクライアント [OpenWhispr](https://github.com/OpenWhispr/openwhispr)（または VoiceInk）をつなぐ軽量中継スクリプトと launchd 設定です。
 
 > [!WARNING]
-> 実験的な構成です。動作を確認したのは作者の環境1台（macOS 26、Apple M2、`speech.cpp` 0.10.0、OpenWhispr 1.11.0）だけで、`setup.sh` を新しい環境で実行して試してはいません。
+> 実験的な構成です。動作を確認したのは作者の環境1台（macOS 26、Apple M2、`speech.cpp` 0.10.0、OpenWhispr 1.11.0）です。`setup.sh` は空のホームディレクトリで導入と認識まで確認しましたが、launchd への実際の登録とログイン時の自動起動は新しいユーザーでは試していません。
 >
 > - 下の図の「認識 0.29〜0.41秒」は、OpenWhispr から3〜8秒の文を話した8回の `speech serve` の処理時間で、話し終えてから文字が入力されるまでの時間ではありません。ほかに1.7秒、5.1秒、8.7秒、起動直後の22.8秒かかった記録もあります。図の元は `images/architecture.html` です。
 > - `proxy.py` は既定では認識結果をログに残しません。`HAAS_LOG_TEXT=1` を指定したときだけ、応答の先頭（200バイト）を `~/.local/share/haas-dictation/proxy.log` に記録します。
@@ -17,7 +17,7 @@ Apple Silicon Mac 上で日本語音声認識モデル [Haas-ja-v1.0](https://hu
 - `keywords.txt` に記載したカスタム語彙（`表記=読み1,読み2`）を `keywords[]` として自動付与
 - OpenWhispr が送信する `/v1/chat/completions`（テキスト補正）リクエストに対し、`<transcript>` 内の本文のみを抽出して `200 OK` で返却
 - WebM/Opus 等の非 WAV 音声を `ffmpeg` で 16kHz モノラル PCM WAV に自動変換
-- 90秒を超える長尺音声のみ `chunking_strategy=auto`（`silero-vad`）を付与し、通常の長さの発話では句読点の脱落を防止
+- 90秒を超える長尺音声のみ `chunking_strategy=auto`（`silero-vad`）を付与。手元の48秒の録音では、分割せずに渡したほうが句読点を保てた
 
 ## セットアップ
 
@@ -41,7 +41,7 @@ cd haas-mac-dictation
 
 ### OpenWhispr 側の設定
 
-1. Finder または Dock から **OpenWhispr** を起動します（ターミナルの子プロセスとして起動すると macOS TCC によりマイク入力が遮断されます）。
+1. Finder または Dock から **OpenWhispr** を起動します（今回の環境では、ターミナル内蔵アプリの子プロセスとして起動したときに、macOS TCC によりマイク入力が遮断されました）。
 2. **音声認識 → セルフホスト** を選択し、以下を設定します。
    - サーバー URL：`http://127.0.0.1:8081/v1`
    - モデル：`Haas-ja-v1.0`
